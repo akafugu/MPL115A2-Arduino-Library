@@ -11,6 +11,8 @@
  ******************************************************************************/
 #include "Arduino.h"
 #include "MPL115A2.h"
+//http://dsscircuits.com/articles/arduino-i2c-master-library.html
+#include "I2C.h"
 
 /******************************************************************************
  * Constructors
@@ -19,7 +21,6 @@ MPL115A2Class::MPL115A2Class(const int shdnPin)
 {
 	m_i2c_address = 0x60;
 	m_shdnPin = shdnPin;
-	Wire.begin();
 }
 
 /******************************************************************************
@@ -36,24 +37,18 @@ void MPL115A2Class::ReadSensor()
     delay(1); // wait the device to be ready
 	
 	// start AD conversions
-    Wire.beginTransmission(m_i2c_address);
-    Wire.write(0x12);
-    Wire.write(0x01);
-    Wire.endTransmission();
+    I2c.write(m_i2c_address, 0x12, 0x01);
     delay(10);
 
-    Wire.beginTransmission(m_i2c_address); 
-    Wire.write((uint8_t) 0x00); 
-    Wire.endTransmission();
-    Wire.requestFrom(m_i2c_address, 4);
-
+    uint8_t buffer[4]; 
+    
     // compensation
-    if (Wire.available())
+    if (!I2c.read(m_i2c_address, 0x00, 4,(uint8_t*)&buffer))
 	{
-		uiPH = Wire.read();
-		uiPL = Wire.read();
-		uiTH = Wire.read();
-		uiTL = Wire.read();
+		uiPH = buffer[0];
+		uiPL = buffer[1];
+		uiTH = buffer[2];
+		uiTL = buffer[3];
     }
 	
 	uiPadc = (unsigned int) uiPH << 8;
@@ -180,27 +175,20 @@ void MPL115A2Class::begin()
     m_bShutdown = 0;
     delay(1); // wait the device to be ready
 
-    //send address
-    Wire.beginTransmission(m_i2c_address); 
-    Wire.write(0x04); 
-    Wire.endTransmission();
-
-    // read out coefficients
-    Wire.requestFrom(m_i2c_address, 12);
-    if (Wire.available())
-	{
-		sia0MSB = Wire.read();
-		sia0LSB = Wire.read();
-		sib1MSB = Wire.read();
-		sib1LSB = Wire.read();
-		sib2MSB = Wire.read();
-		sib2LSB = Wire.read();
-		sic12MSB = Wire.read();
-		sic12LSB = Wire.read();
-		sic11MSB = Wire.read();
-		sic11LSB = Wire.read();
-		sic22MSB = Wire.read();
-		sic22LSB = Wire.read();
+    
+    if (!I2c.read(m_i2c_address, 0x04, 12))	{
+      sia0MSB =  I2c.receive();
+      sia0LSB =  I2c.receive();
+      sib1MSB =  I2c.receive();
+      sib1LSB =  I2c.receive();
+      sib2MSB =  I2c.receive();
+      sib2LSB =  I2c.receive();
+      sic12MSB =  I2c.receive();
+      sic12LSB =  I2c.receive();
+      sic11MSB =  I2c.receive();
+      sic11LSB =  I2c.receive();
+      sic22MSB =  I2c.receive();
+      sic22LSB =  I2c.receive();
     }
 	
 	// Placing coefficients into 16-bit Variables

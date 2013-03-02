@@ -9,7 +9,8 @@
 #ifndef MPL115A2_H
 #define MPL115A2_H
 
-#include <Wire.h>
+//http://dsscircuits.com/articles/arduino-i2c-master-library.html
+#include "I2C.h"
 #include <inttypes.h>
 
 class MPL115A2Class
